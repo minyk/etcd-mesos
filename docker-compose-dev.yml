@@ -1,0 +1,101 @@
+version: "2"
+
+services:
+  zk:
+    image: zookeeper
+    network_mode: host
+    environment:
+      ZK_CONFIG: tickTime=2000,initLimit=10,syncLimit=5,maxClientCnxns=128,forceSync=no,clientPort=2181
+      ZK_ID: 1
+#    healthcheck:
+#       test: ["CMD-SHELL","echo ruok|nc localhost 2181 "]
+#       interval: 30s
+#       timeout: 10s
+#       retries: 5
+  master:
+    image: mesosphere/mesos-master:1.2.0-rc2
+    network_mode: host
+    environment:
+      MESOS_ZK: zk://127.0.0.1:2181/mesos
+      MESOS_QUORUM: 1
+      MESOS_CLUSTER: docker-compose
+      MESOS_REGISTRY: replicated_log # default is in_memory for some reason
+      MESOS_HOSTNAME: ${DOCKER_IP}
+      LIBPROCESS_IP: ${DOCKER_IP}
+
+    depends_on:
+      - zk
+
+  slave-one:
+    image: mesosphere/mesos-slave:1.2.0-rc2
+    network_mode: host
+    pid: host
+    privileged: true
+    environment:
+      MESOS_MASTER: zk://127.0.0.1:2181/mesos
+      MESOS_CONTAINERIZERS: docker,mesos
+      MESOS_PORT: 5051
+      MESOS_RESOURCES: ports(*):[11000-11999]
+      MESOS_HOSTNAME: ${DOCKER_IP}
+      LIBPROCESS_IP: ${DOCKER_IP}
+      MESOS_WORK_DIR: /sandbox
+      MESOS_SWITCH_USER: "false"
+      MESOS_ATTRIBUTES: "ethos_role:proxy;zone:us-east-1c"
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup
+      - /usr/bin/docker:/usr/bin/docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/mesos1:/sandbox
+    depends_on:
+      - zk
+      - master
+      
+  slave-two:
+    image: mesosphere/mesos-slave:1.2.0-rc2
+    network_mode: host
+    pid: host
+    privileged: true
+    environment:
+      MESOS_MASTER: zk://127.0.0.1:2181/mesos
+      MESOS_CONTAINERIZERS: docker,mesos
+      MESOS_PORT: 5052
+      MESOS_RESOURCES: ports(*):[12000-12999]
+      MESOS_HOSTNAME: ${DOCKER_IP}
+      LIBPROCESS_IP: ${DOCKER_IP}
+      MESOS_WORK_DIR: /sandbox
+      MESOS_SWITCH_USER: "false"
+#      MESOS_ATTRIBUTES: "ethos_role:control;zone:us-east-1c"
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup
+      - /usr/bin/docker:/usr/bin/docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/mesos2:/sandbox
+    depends_on:
+      - zk
+      - master
+      
+  slave-three:
+    image: mesosphere/mesos-slave:1.2.0-rc2
+    network_mode: host
+    pid: host
+    privileged: true    
+    environment:
+      MESOS_MASTER: zk://127.0.0.1:2181/mesos
+      MESOS_CONTAINERIZERS: docker,mesos
+      MESOS_PORT: 5053
+      MESOS_RESOURCES: ports(*):[13000-13999]
+      MESOS_HOSTNAME: ${DOCKER_IP}
+      LIBPROCESS_IP: ${DOCKER_IP}
+      MESOS_WORK_DIR: /sandbox
+      MESOS_SWITCH_USER: "false"
+      MESOS_ATTRIBUTES: "ethos_role:worker;zone:us-east-1c"
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup
+      - /usr/bin/docker:/usr/bin/docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/mesos3:/sandbox
+    depends_on:
+      - zk
+      - master
+
+

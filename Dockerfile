@@ -1,4 +1,5 @@
-FROM debian
+FROM       alpine:3.5
+MAINTAINER Adobe Ethos Dev Team <Ethos_Dev@adobe.com>
 ADD bin /work/bin
 ADD static /work/static
 WORKDIR /work

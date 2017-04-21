@@ -1,0 +1,134 @@
+version: "2"
+
+services:
+  zk:
+    image: zookeeper
+    network_mode: host
+    environment:
+      ZK_CONFIG: tickTime=2000,initLimit=10,syncLimit=5,maxClientCnxns=128,forceSync=no,clientPort=2181
+      ZK_ID: 1
+#    healthcheck:
+#       test: ["CMD-SHELL","echo ruok|nc localhost 2181 "]
+#       interval: 30s
+#       timeout: 10s
+#       retries: 5
+  master:
+    image: mesosphere/mesos-master:1.2.0-rc2
+    network_mode: host
+    environment:
+      MESOS_ZK: zk://127.0.0.1:2181/mesos
+      MESOS_QUORUM: 1
+      MESOS_CLUSTER: docker-compose
+      MESOS_REGISTRY: replicated_log # default is in_memory for some reason
+      MESOS_HOSTNAME: ${DOCKER_IP}
+      LIBPROCESS_IP: ${DOCKER_IP}
+
+    depends_on:
+      - zk
+
+  slave-one:
+    image: mesosphere/mesos-slave:1.2.0-rc2
+    network_mode: host
+    pid: host
+    privileged: true
+    environment:
+      MESOS_MASTER: zk://127.0.0.1:2181/mesos
+      MESOS_CONTAINERIZERS: docker,mesos
+      MESOS_PORT: 5051
+      MESOS_RESOURCES: ports(*):[11000-11999]
+      MESOS_HOSTNAME: ${DOCKER_IP}
+      LIBPROCESS_IP: ${DOCKER_IP}
+      MESOS_WORK_DIR: /sandbox
+      MESOS_SWITCH_USER: "false"
+      MESOS_ATTRIBUTES: "ethos_role:proxy;zone:us-east-1c"
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup
+      - /usr/bin/docker:/usr/bin/docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/mesos1:/sandbox
+    depends_on:
+      - zk
+      - master
+      
+  slave-two:
+    image: mesosphere/mesos-slave:1.2.0-rc2
+    network_mode: host
+    pid: host
+    privileged: true
+    environment:
+      MESOS_MASTER: zk://127.0.0.1:2181/mesos
+      MESOS_CONTAINERIZERS: docker,mesos
+      MESOS_PORT: 5052
+      MESOS_RESOURCES: ports(*):[12000-12999]
+      MESOS_HOSTNAME: ${DOCKER_IP}
+      LIBPROCESS_IP: ${DOCKER_IP}
+      MESOS_WORK_DIR: /sandbox
+      MESOS_SWITCH_USER: "false"
+#      MESOS_ATTRIBUTES: "ethos_role:control;zone:us-east-1c"
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup
+      - /usr/bin/docker:/usr/bin/docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/mesos2:/sandbox
+    depends_on:
+      - zk
+      - master
+      
+  slave-three:
+    image: mesosphere/mesos-slave:1.2.0-rc2
+    network_mode: host
+    pid: host
+    privileged: true    
+    environment:
+      MESOS_MASTER: zk://127.0.0.1:2181/mesos
+      MESOS_CONTAINERIZERS: docker,mesos
+      MESOS_PORT: 5053
+      MESOS_RESOURCES: ports(*):[13000-13999]
+      MESOS_HOSTNAME: ${DOCKER_IP}
+      LIBPROCESS_IP: ${DOCKER_IP}
+      MESOS_WORK_DIR: /sandbox
+      MESOS_SWITCH_USER: "false"
+      MESOS_ATTRIBUTES: "ethos_role:worker;zone:us-east-1c"
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup
+      - /usr/bin/docker:/usr/bin/docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/mesos3:/sandbox
+    depends_on:
+      - zk
+      - master
+
+  etcd:
+    image: mesosphere/etcd-mesos:latest
+#    image: docker-ethos-core-univ-release.dr-uw2.adobeitc.com/ethos/etcd-mesos:0.1.3 
+    network_mode: host
+    pid: host
+
+    command: /work/bin/etcd-mesos-scheduler -alsologtostderr=true -address=${DOCKER_IP} -framework-name=etcd-foo -cluster-size=1 -master="zk://127.0.0.1:2181/mesos" -zk-framework-persist="zk://127.0.0.1:2181/etcd"  -v=1 -auto-reseed=true -reseed-timeout=240 -sandbox-disk-limit=1024 -sandbox-cpu-limit=1 -sandbox-mem-limit=256 -admin-port=8820 -driver-port=8821 -artifact-port=8822 -framework-weburi="http://127.0.0.1:4050/stats"  --task-constraints "ethos_role:LIKE:proxy" 
+
+#    command: /work/bin/etcd-mesos-scheduler -alsologtostderr=true -address=${DOCKER_IP} -framework-name=\\${FRAMEWORK_NAME} -cluster-size=\\${CLUSTER_SIZE} -master=\\${MESOS_MASTER} -zk-framework-persist=\\${ZK_PERSIST} -v=\\${VERBOSITY} -auto-reseed=\\${AUTO_RESEED} -reseed-timeout=\\${RESEED_TIMEOUT} -sandbox-disk-limit=\\${DISK_LIMIT} -sandbox-cpu-limit=\\${CPU_LIMIT} -sandbox-mem-limit=\\${MEM_LIMIT} -admin-port=\\${PORT0} -driver-port=\\${PORT1} -artifact-port=\\${PORT2} -framework-weburi=\\${WEBURI}
+
+
+    environment:
+      FRAMEWORK_NAME: etcd-foo
+      CLUSTER_SIZE: 1
+      MESOS_MASTER: zk://127.0.0.1:2181/mesos
+      ZK_PERSIST: zk://127.0.0.1:2181/etcd
+      VERBOSITY: 1
+      AUTO_RESEED: "true"
+      RESEED_TIMEOUT: 240
+      DISK_LIMIT: 4096
+      CPU_LIMIT: 1
+      MEM_LIMIT: 256
+      # PORT0 -- admin port      
+      PORT0: 8820
+      # PORT1 -- admin port
+      PORT1: 8821
+      # PORT1 -- artifact port
+      PORT2: 8822
+      WEBURI: "http://127.0.0.1:4050/stats"
+
+    depends_on:
+      - zk
+      - master
+

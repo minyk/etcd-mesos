@@ -202,7 +202,9 @@ func main() {
 			if err != nil {
 				log.Fatal("failed to read secret file: ", err.Error())
 			}
-			cred.Secret = proto.String(string(secret))
+			if secret != nil {
+				cred.Secret = []byte(*proto.String(string(secret)))
+			}
 		}
 	}
 
