@@ -25,7 +25,7 @@ import (
 	"net"
 	"net/http"
 	"os"
-
+	"os/user"
 	"github.com/gogo/protobuf/proto"
 	log "github.com/golang/glog"
 	"github.com/mesos/mesos-go/auth"
@@ -99,6 +99,7 @@ func main() {
 	failoverTimeoutSeconds :=
 		flag.Float64("failover-timeout-seconds", 60*60*24*7, "Mesos framework failover timeout in seconds")
 	weburi := flag.String("framework-weburi", "", "A URI that points to a web-based interface for interacting with the framework.")
+	constraint := flag.String("task-constraints", "", "Constrain tasks to slaves having attributes matching constraint")
 
 	flag.Parse()
 
@@ -178,9 +179,22 @@ func main() {
 	etcdScheduler.Master = *master
 	etcdScheduler.FrameworkName = *frameworkName
 	etcdScheduler.ZkConnect = *zkFrameworkPersist
-
+	if constraint != nil {
+		// a marathon-esque attribute of the for property:[LIKE,UNLIKE]:value that gets used against slave attributes
+		if err := etcdScheduler.AddRawConstraints(*constraint); err != nil {
+			log.Fatal(err)
+		}
+	}
+	// with alpine linux, user.Current() can be empty. If it's empty, mesos-go cannot fill in the user
+	// so provide one: root.  otherwise, the framework will NOT register
+	defaultUser:=""
+	if usr,err := user.Current(); err != nil || usr==nil  {
+		defaultUser="root"
+	} else {
+		defaultUser = usr.Username
+	}
 	fwinfo := &mesos.FrameworkInfo{
-		User:            proto.String(""), // Mesos-go will fill in user.
+		User:            proto.String(defaultUser), // Mesos-go will fill in user.
 		Name:            proto.String(*frameworkName),
 		Checkpoint:      proto.Bool(true),
 		FailoverTimeout: proto.Float64(*failoverTimeoutSeconds),
@@ -203,7 +217,7 @@ func main() {
 				log.Fatal("failed to read secret file: ", err.Error())
 			}
 			if secret != nil {
-				cred.Secret = []byte(*proto.String(string(secret)))
+				cred.Secret = proto.String(string(secret))
 			}
 		}
 	}
