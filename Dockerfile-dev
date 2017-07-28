@@ -1,0 +1,30 @@
+FROM       golang:1.8.1-alpine
+
+# install runtime scripts
+ADD . $GOPATH/src/git.corp.adobe.com/adobe-platform/etcd-mesos
+
+WORKDIR $GOPATH/src/git.corp.adobe.com/adobe-platform/etcd-mesos
+
+RUN apk add --no-cache \
+      bash \
+      build-base \
+      curl \
+      make \
+      git \
+      sqlite-dev \
+      openssh-client \
+      && make install-tools
+
+#
+# Prepare git to use ssh-agent, ssh keys for adobe-platform; ignore interactive knownhosts questions from ssh
+# - For automated building with private repos only accessible by ssh
+#
+RUN mkdir -p /root/.ssh && chmod og-rwx /root/.ssh && \
+    echo "Host * " > /root/.ssh/config && \
+    echo "StrictHostKeyChecking no " >> /root/.ssh/config && \
+    echo "UserKnownHostsFile=/dev/null" >> /root/.ssh/config && \
+    git config --global url."git@github.com:adobe-platform".insteadOf "https://github.com/adobe-platform" && \
+    git config --global url."git@github.com:behance".insteadOf "https://github.com/behance"
+
+
+CMD /bin/bash

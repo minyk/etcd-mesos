@@ -72,6 +72,9 @@ const (
 	Immutable
 )
 
+type Constraint []string
+type Constraints []Constraint
+
 type EtcdScheduler struct {
 	Stats                        Stats
 	Master                       string
@@ -110,6 +113,7 @@ type EtcdScheduler struct {
 	livelockWindow               *time.Time
 	reseeding                    int32
 	reconciliationInfo           map[string]string
+	constraints                  Constraints
 }
 
 type Stats struct {
@@ -172,7 +176,30 @@ func NewEtcdScheduler(
 		memPerTask:                   memPerTask,
 		offerRefuseSeconds:           offerRefuseSeconds,
 		reconciliationInfo:           map[string]string{},
+		constraints:                  Constraints{},
 	}
+}
+
+// AddRawConstraints -- parses a constraint as they'd be added by Marathon.
+func (s *EtcdScheduler) AddRawConstraints(statements string) error {
+	for _, tuple := range strings.Split(statements, ";") {
+		statement := strings.SplitN(tuple, ":", 3)
+		switch op := strings.ToUpper(statement[1]); op {
+		case "LIKE", "UNLIKE":
+			if len(statement) != 3 {
+				return fmt.Errorf("LIKE and UNLIKE require 'X LIKE someval'")
+			}
+			s.constraints = append(s.constraints, statement)
+		// valid marathon attributes that may get sent to this framework.
+		case "UNIQUE", "CLUSTER", "GROUP_BY", "MAX_PER":
+			// only accept string attributes
+			// framework enforces via different option
+			continue
+		default:
+			return fmt.Errorf("Unknown constraint operator %s in %s", op, tuple)
+		}
+	}
+	return nil
 }
 
 // ----------------------- mesos callbacks ------------------------- //
@@ -220,6 +247,34 @@ func (s *EtcdScheduler) Disconnected(scheduler.SchedulerDriver) {
 	s.mut.Lock()
 	s.state = Immutable
 	s.mut.Unlock()
+}
+func (s *EtcdScheduler) MatchesConstraints(driver scheduler.SchedulerDriver, offer *mesos.Offer) bool {
+	if len(s.constraints) == 0 {
+		return true
+	}
+CONSTRAINT:
+	for _, constraint := range s.constraints {
+		subjectName := constraint[0]
+		op := constraint[1]
+		for _, att := range offer.Attributes {
+			if subjectName == att.GetName() && att.GetText().Value != nil {
+
+				result := strings.Contains(*att.GetText().Value, constraint[2])
+				if (op == "LIKE"  && result)  || (op == "UNLIKE" && !result) {
+
+					continue CONSTRAINT
+				}
+				break
+			}
+		}
+		// we decline if we can't find a matching attribute or the attribute value cannot be found in an attribute
+		log.V(2).Infof("Offer< %s > Rejected by constraints", offer.Id.GetValue())
+		return false
+	}
+	log.V(2).Infof("Acceptable offer < %s >  met attribute constraints %+v\n", offer.Id.GetValue(),s.constraints)
+
+	return true
+
 }
 
 func (s *EtcdScheduler) ResourceOffers(
@@ -292,6 +347,7 @@ func (s *EtcdScheduler) ResourceOffers(
 			resources.mems >= memWanted &&
 			totalPorts >= portsWanted &&
 			resources.disk >= s.diskPerTask &&
+			s.MatchesConstraints(driver,offer ) &&
 			s.offerCache.Push(offer) {
 
 			// golang for-loop variable reuse necessitates a copy here.
