@@ -49,7 +49,7 @@ var cmdTemplate = template.Must(template.New("etcd-cmd").Parse(
 func main() {
 	master :=
 		flag.String("master", "127.0.0.1:5050", "Master address <ip:port>, "+
-			"or zk://host:port,host:port/mesos uri for discovering the current "+
+			"or zk://(((digest|ip|host):creds),..@)host:port,host:port/mesos uri for discovering the current "+
 			"mesos master.")
 	etcdBin :=
 		flag.String("etcd-bin", "./bin/etcd", "Path to etcd binary to "+

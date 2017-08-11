@@ -38,6 +38,7 @@ import (
 
 	"github.com/mesosphere/etcd-mesos/rpc"
 	etcdscheduler "github.com/mesosphere/etcd-mesos/scheduler"
+	"github.com/adobe-platform/zk-cli/cli"
 )
 
 func parseIP(address string) net.IP {
@@ -57,7 +58,7 @@ func main() {
 	master :=
 		flag.String("master", "127.0.0.1:5050", "Master address <ip:port>")
 	zkFrameworkPersist :=
-		flag.String("zk-framework-persist", "", "Zookeeper URI of the form zk://host1:port1,host2:port2/chroot/path")
+		flag.String("zk-framework-persist", "", "Zookeeper URI of the form zk://([digest|ip|host|auth]:(id|user:password))+@*host1:port1,host2:port2/chroot/path")
 	taskCount :=
 		flag.Int("cluster-size", 5, "Total task count to run")
 	adminPort :=
@@ -160,7 +161,7 @@ func main() {
 	log.V(2).Info("Serving executor artifacts...")
 
 	bindingAddress := parseIP(*address)
-
+	log.Infof("binding address: %s", bindingAddress)
 	// chillFactor is the number of seconds that are slept for to allow for
 	// convergence across the cluster during mutations.
 	chillFactor := 10
@@ -217,20 +218,30 @@ func main() {
 				log.Fatal("failed to read secret file: ", err.Error())
 			}
 			if secret != nil {
-				cred.Secret = proto.String(string(secret))
+					cred.Secret = proto.String(string(secret))
 			}
 		}
 	}
+	log.Infof("mesos credentials: %v",cred)
 
-	zkServers, zkChroot, err := rpc.ParseZKURI(*zkFrameworkPersist)
+//	zkServers, zkChroot, err := rpc.ParseZKURI(*zkFrameworkPersist)
+	zkServers,zkChroot,zkAcls,err := cli.ParseZKURI(*zkFrameworkPersist)
+	if err != nil{
+		log.Fatalf("Bad format for zk %s due to: %s", *zkFrameworkPersist,err)
+	}
+	log.Infof("zkFramework servers: %s zkChroot: %s zkAcl: %v", zkServers,zkChroot,zkAcls)
+
 	etcdScheduler.ZkServers = zkServers
 	etcdScheduler.ZkChroot = zkChroot
+	etcdScheduler.ZkAcls = zkAcls
+
 	if err != nil && *zkFrameworkPersist != "" {
 		log.Fatalf("Error parsing zookeeper URI of %s: %s", *zkFrameworkPersist, err)
 	} else if *zkFrameworkPersist != "" {
 		previous, err := rpc.GetPreviousFrameworkID(
 			zkServers,
 			zkChroot,
+			zkAcls,
 			etcdScheduler.FrameworkName,
 		)
 		if err != nil && err != zk.ErrNoNode {

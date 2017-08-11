@@ -1,12 +1,25 @@
 version: "2"
+networks:
+  etcd-test-tier:
+    driver: bridge
+
 
 services:
   zk:
     image: zookeeper
-    network_mode: host
+    networks:
+      - etcd-test-tier
+
     environment:
       ZK_CONFIG: tickTime=2000,initLimit=10,syncLimit=5,maxClientCnxns=128,forceSync=no,clientPort=2181
       ZK_ID: 1
+
+    networks:
+      etcd-test-tier:
+        aliases:
+           - zk.mesos
+
+
 #    healthcheck:
 #       test: ["CMD-SHELL","echo ruok|nc localhost 2181 "]
 #       interval: 30s
@@ -14,14 +27,18 @@ services:
 #       retries: 5
   master:
     image: mesosphere/mesos-master:1.2.0-rc2
-    network_mode: host
+    networks:
+      etcd-test-tier:
+        aliases:
+           - leader.mesos
+      
+
     environment:
-      MESOS_ZK: zk://127.0.0.1:2181/mesos
+      MESOS_ZK: zk://zk.mesos:2181/mesos
       MESOS_QUORUM: 1
       MESOS_CLUSTER: docker-compose
       MESOS_REGISTRY: replicated_log # default is in_memory for some reason
-      MESOS_HOSTNAME: ${DOCKER_IP}
-      LIBPROCESS_IP: ${DOCKER_IP}
+      MESOS_HOSTNAME: leader.mesos 
       MESOS_CREDENTIALS: /etc/ethos/server
       MESOS_AUTHENTICATE: "true"
       MESOS_AUTHENTICATE_AGENTS: "true"
@@ -29,22 +46,25 @@ services:
 
     volumes:
       - ./fixtures/credentials/server.json:/etc/ethos/server:ro
+    ports:
+      - "5050:5050"
 
     depends_on:
       - zk
 
-  slave-one:
+  proxy:
     image: mesosphere/mesos-slave:1.2.0-rc2
-    network_mode: host
-    pid: host
+    networks:
+      etcd-test-tier:
+        aliases:
+           - proxy.mesos
+    
     privileged: true
     environment:
-      MESOS_MASTER: zk://127.0.0.1:2181/mesos
+      MESOS_MASTER: zk://zk.mesos:2181/mesos
       MESOS_CONTAINERIZERS: docker,mesos
       MESOS_PORT: 5051
       MESOS_RESOURCES: ports(*):[11000-11999]
-      MESOS_HOSTNAME: ${DOCKER_IP}
-      LIBPROCESS_IP: ${DOCKER_IP}
       MESOS_WORK_DIR: /sandbox
       MESOS_SWITCH_USER: "false"
       MESOS_ATTRIBUTES: "ethos_role:proxy;zone:us-east-1c"
@@ -53,50 +73,50 @@ services:
       - /sys/fs/cgroup:/sys/fs/cgroup
       - /usr/bin/docker:/usr/bin/docker
       - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp/mesos1:/sandbox
+#      - /tmp/mesos1:/sandbox
       - ./fixtures/credentials/agent.json:/etc/ethos/agent:ro
+    tmpfs: /sandbox
     depends_on:
       - zk
       - master
       
-  slave-two:
+  control:
     image: mesosphere/mesos-slave:1.2.0-rc2
-    network_mode: host
-    pid: host
-    privileged: true
+    networks:
+      etcd-test-tier:
+        aliases:
+           - control.mesos
     environment:
-      MESOS_MASTER: zk://127.0.0.1:2181/mesos
+      MESOS_MASTER: zk://zk.mesos:2181/mesos
       MESOS_CONTAINERIZERS: docker,mesos
-      MESOS_PORT: 5052
+      MESOS_PORT: 5051
       MESOS_RESOURCES: ports(*):[12000-12999]
-      MESOS_HOSTNAME: ${DOCKER_IP}
-      LIBPROCESS_IP: ${DOCKER_IP}
       MESOS_WORK_DIR: /sandbox
       MESOS_SWITCH_USER: "false"
-#      MESOS_ATTRIBUTES: "ethos_role:control;zone:us-east-1c"
+      MESOS_ATTRIBUTES: "ethos_role:control;zone:us-east-1c"
       MESOS_CREDENTIAL: /etc/ethos/agent
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup
       - /usr/bin/docker:/usr/bin/docker
       - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp/mesos2:/sandbox
+#      - /tmp/mesos2:/sandbox
       - ./fixtures/credentials/agent.json:/etc/ethos/agent:ro
+    tmpfs: /sandbox
     depends_on:
       - zk
       - master
       
-  slave-three:
+  worker:
     image: mesosphere/mesos-slave:1.2.0-rc2
-    network_mode: host
-    pid: host
-    privileged: true    
+    networks:
+      etcd-test-tier:
+        aliases:
+           - worker.mesos
     environment:
-      MESOS_MASTER: zk://127.0.0.1:2181/mesos
+      MESOS_MASTER: zk://zk.mesos:2181/mesos
       MESOS_CONTAINERIZERS: docker,mesos
-      MESOS_PORT: 5053
+      MESOS_PORT: 50515
       MESOS_RESOURCES: ports(*):[13000-13999]
-      MESOS_HOSTNAME: ${DOCKER_IP}
-      LIBPROCESS_IP: ${DOCKER_IP}
       MESOS_WORK_DIR: /sandbox
       MESOS_SWITCH_USER: "false"
       MESOS_ATTRIBUTES: "ethos_role:worker;zone:us-east-1c"
@@ -105,8 +125,9 @@ services:
       - /sys/fs/cgroup:/sys/fs/cgroup
       - /usr/bin/docker:/usr/bin/docker
       - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp/mesos3:/sandbox
+#      - /tmp/mesos3:/sandbox
       - ./fixtures/credentials/agent.json:/etc/ethos/agent:ro
+    tmpfs: /sandbox
     depends_on:
       - zk
       - master
@@ -114,12 +135,14 @@ services:
   etcd:
     image: mesosphere/etcd-mesos:latest
 #    image: docker-ethos-core-univ-release.dr-uw2.adobeitc.com/ethos/etcd-mesos:0.1.3 
-    network_mode: host
-    pid: host
+    networks:
+      etcd-test-tier:
+        aliases:
+           - etcd.mesos
 
-    command: /work/bin/etcd-mesos-scheduler -alsologtostderr=true -address=${DOCKER_IP} -framework-name=etcd-foo -cluster-size=1 -master="zk://127.0.0.1:2181/mesos" -zk-framework-persist="zk://127.0.0.1:2181/etcd"  -v=1 -auto-reseed=true -reseed-timeout=240 -sandbox-disk-limit=1024 -sandbox-cpu-limit=1 -sandbox-mem-limit=256 -admin-port=8820 -driver-port=8821 -artifact-port=8822 -framework-weburi="http://127.0.0.1:4050/stats" -mesos-authentication-principal=principal2 -mesos-authentication-secret-file=/etc/ethos/etcd 
+    command: /work/bin/etcd-mesos-scheduler -alsologtostderr=true  -cluster-size=1 -master="zk://digest:user1:pw1,digest:user2:pw2@zk.mesos:2181/mesos" -zk-framework-persist="zk://digest:user2:pw2@zk.mesos:2181/etcd"  -v=1 -auto-reseed=true -reseed-timeout=240 -sandbox-disk-limit=1024 -sandbox-cpu-limit=1 -sandbox-mem-limit=256 -admin-port=8820 -driver-port=8821 -artifact-port=8822  -mesos-authentication-principal=principal2 -mesos-authentication-secret-file=/etc/ethos/etcd --task-constraints "ethos_role:LIKE:proxy" 
 
-#    command: /work/bin/etcd-mesos-scheduler -alsologtostderr=true -address=${DOCKER_IP} -framework-name=\\${FRAMEWORK_NAME} -cluster-size=\\${CLUSTER_SIZE} -master=\\${MESOS_MASTER} -zk-framework-persist=\\${ZK_PERSIST} -v=\\${VERBOSITY} -auto-reseed=\\${AUTO_RESEED} -reseed-timeout=\\${RESEED_TIMEOUT} -sandbox-disk-limit=\\${DISK_LIMIT} -sandbox-cpu-limit=\\${CPU_LIMIT} -sandbox-mem-limit=\\${MEM_LIMIT} -admin-port=\\${PORT0} -driver-port=\\${PORT1} -artifact-port=\\${PORT2} -framework-weburi=\\${WEBURI}
+#    command: /work/bin/etcd-mesos-scheduler -alsologtostderr=true -address=etcd.mesos -framework-name=\\${FRAMEWORK_NAME} -cluster-size=\\${CLUSTER_SIZE} -master=\\${MESOS_MASTER} -zk-framework-persist=\\${ZK_PERSIST} -v=\\${VERBOSITY} -auto-reseed=\\${AUTO_RESEED} -reseed-timeout=\\${RESEED_TIMEOUT} -sandbox-disk-limit=\\${DISK_LIMIT} -sandbox-cpu-limit=\\${CPU_LIMIT} -sandbox-mem-limit=\\${MEM_LIMIT} -admin-port=\\${PORT0} -driver-port=\\${PORT1} -artifact-port=\\${PORT2} -framework-weburi=\\${WEBURI} -mesos-authentication-principal=\\${MESOS_AUTHENTICATION_PRINICPAL} -mesos-authentication-secret-file=\\${MESOS_AUTHENTICATION_SECRET_FILE} --task-constraints \\${TASK_CONSTRAINTS}
 
     volumes:
       - ./fixtures/credentials/etcd:/etc/ethos/etcd:ro
@@ -127,8 +150,8 @@ services:
     environment:
       FRAMEWORK_NAME: etcd-foo
       CLUSTER_SIZE: 1
-      MESOS_MASTER: zk://127.0.0.1:2181/mesos
-      ZK_PERSIST: zk://127.0.0.1:2181/etcd
+      MESOS_MASTER: zk://digest:user1:pw1,digest:user2:pw2@zk.mesos:2181/mesos
+      ZK_PERSIST: zk://digest:user2:pw2@zk.mesos:2181/etcd
       VERBOSITY: 1
       AUTO_RESEED: "true"
       RESEED_TIMEOUT: 240
@@ -137,11 +160,13 @@ services:
       MEM_LIMIT: 256
       # PORT0 -- admin port      
       PORT0: 8820
-      # PORT1 -- admin port
+      # PORT1 -- driver port
       PORT1: 8821
       # PORT1 -- artifact port
       PORT2: 8822
-      WEBURI: "http://127.0.0.1:4050/stats"
+      MESOS_AUTHENTICATION_PRINCIPAL: "principal2" 
+      MESOS_AUTHENTICATION_SECRET_FILE: "/etc/ethos/etcd"
+      TASK_CONSTRAINTS: "ethos_role:LIKE:proxy" 
 
     depends_on:
       - zk

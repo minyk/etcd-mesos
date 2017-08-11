@@ -3,6 +3,24 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "/j+d/cRNzpYe4qmqMTtoA4OPjI8=",
+			"path": "github.com/adobe-platform/zk-cli/cli",
+			"revision": "24729651d087aaea17d8762ab6a0e41c2c6ceb84",
+			"revisionTime": "2017-08-09T23:43:56Z"
+		},
+		{
+			"checksumSHA1": "7m85YbsptuV7yqjvsy4qJ3B/MoE=",
+			"path": "github.com/behance/go-logging/log",
+			"revision": "98df59751f14b46c6391ee33e0a3d3888708f54b",
+			"revisionTime": "2017-05-15T22:32:22Z"
+		},
+		{
+			"checksumSHA1": "TRk9DUL5VjFiaYdNggZ/XE+rCkU=",
+			"path": "github.com/behance/go-logrus",
+			"revision": "eb84da520d0bfecda7a9288107ec991b4ebcedb4",
+			"revisionTime": "2015-03-02T12:28:43Z"
+		},
+		{
 			"checksumSHA1": "spyv5/YFBjYyZLZa1U2LBfDR8PM=",
 			"path": "github.com/beorn7/perks/quantile",
 			"revision": "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9",
@@ -13,6 +31,12 @@
 			"path": "github.com/boltdb/bolt",
 			"revision": "e9cf4fae01b5a8ff89d0ec6b32f0d9c9f79aefdd",
 			"revisionTime": "2017-01-31T19:20:18Z"
+		},
+		{
+			"checksumSHA1": "BvQzqh3Ct57ELet0COxtDrDbhjI=",
+			"path": "github.com/codegangsta/negroni",
+			"revision": "c262547a5086067ebe455c81db5cc52eb298ac3c",
+			"revisionTime": "2017-08-09T18:06:16Z"
 		},
 		{
 			"checksumSHA1": "1Ru7Ph5bYsasMGDTzfaduqCy1PA=",
@@ -951,9 +975,10 @@
 			"revisionTime": "2017-04-24T20:45:52Z"
 		},
 		{
-			"checksumSHA1": "vSmTsVjWHEDmlPfXvt4WQnex4ec=",
+			"checksumSHA1": "F92MtDeWhpZnRFpT+VgaITKTJh4=",
 			"path": "github.com/samuel/go-zookeeper/zk",
-			"revision": "5f85ef92577639933d299695500692ece394b4a7"
+			"revision": "8ac67fae881ed12e87206ba2243c75b079b419a4",
+			"revisionTime": "2017-08-04T17:18:10Z"
 		},
 		{
 			"checksumSHA1": "EO+jcRet/AJ6IY3lBO8l8BLsZWg=",

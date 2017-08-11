@@ -35,61 +35,37 @@ import (
 	log "github.com/golang/glog"
 	mesos "github.com/mesos/mesos-go/mesosproto"
 	"github.com/samuel/go-zookeeper/zk"
+	"github.com/adobe-platform/zk-cli/cli"
 )
 
-func ParseZKURI(zkURI string) (servers []string, chroot string, err error) {
-	servers = []string{}
-
-	// this is to use the canonical zk://host1:ip,host2/zkChroot format
-	strippedZKConnect := strings.TrimPrefix(zkURI, "zk://")
-	parts := strings.Split(strippedZKConnect, "/")
-	if len(parts) == 2 {
-		if parts[1] == "" {
-			return nil, "", errors.New("ZK chroot must not be the root path \"/\"!")
-		}
-		chroot = "/" + parts[1]
-		servers = strings.Split(parts[0], ",")
-	} else if len(parts) == 1 {
-		servers = strings.Split(parts[0], ",")
-	} else {
-		return nil, "", errors.New("ZK URI must be of the form " +
-			"zk://$host1:$port1,$host2:$port2/path/to/zk/chroot")
-	}
-	for _, zk := range servers {
-		if len(strings.Split(zk, ":")) != 2 {
-			return nil, "", errors.New("ZK URI must be of the form " +
-				"zk://$host1:$port1,$host2:$port2/path/to/zk/chroot")
-		}
-	}
-	return servers, chroot, nil
-}
-
-func PersistFrameworkID(
-	fwid *mesos.FrameworkID,
-	zkServers []string,
-	zkChroot string,
-	frameworkName string,
-) error {
+func PersistFrameworkID(fwid *mesos.FrameworkID, zkServers []string, zkChroot string, zkAcls []zk.ACL, frameworkName string) error {
 	c, _, err := zk.Connect(zkServers, RPC_TIMEOUT)
 	if err != nil {
 		return err
 	}
 	defer c.Close()
+
+	for _, acl := range zkAcls {
+		c.AddAuth(acl.Scheme, []byte(acl.ID))
+	}
+	if zkAcls == nil{
+		zkAcls = zk.WorldACL(zk.PermAll)
+	}
 	// attempt to create the path
 	_, err = c.Create(
 		zkChroot,
 		[]byte(""),
 		0,
-		zk.WorldACL(zk.PermAll),
+		zkAcls,
 	)
 	if err != nil && err != zk.ErrNodeExists {
 		return err
 	}
 	// attempt to write framework ID to <path> / <frameworkName>
-	_, err = c.Create(zkChroot+"/"+frameworkName+"_framework_id",
+	_, err = c.Create(zkChroot + "/" + frameworkName + "_framework_id",
 		[]byte(fwid.GetValue()),
 		0,
-		zk.WorldACL(zk.PermAll))
+		zkAcls)
 	// TODO(tyler) when err is zk.ErrNodeExists, cross-check value
 	if err != nil {
 		return err
@@ -99,12 +75,7 @@ func PersistFrameworkID(
 	return nil
 }
 
-func UpdateReconciliationInfo(
-	reconciliationInfo map[string]string,
-	zkServers []string,
-	zkChroot string,
-	frameworkName string,
-) error {
+func UpdateReconciliationInfo(reconciliationInfo map[string]string, zkServers []string, zkChroot string, zkAcls []zk.ACL, frameworkName string) error {
 	serializedReconciliationInfo, err := json.Marshal(reconciliationInfo)
 	if err != nil {
 		return err
@@ -116,10 +87,17 @@ func UpdateReconciliationInfo(
 			return err
 		}
 		defer c.Close()
+		for _, acl := range zkAcls {
+			c.AddAuth(acl.Scheme, []byte(acl.ID))
+		}
+		if zkAcls == nil{
+			zkAcls = zk.WorldACL(zk.PermAll)
+		}
+
 
 		// try to update an existing node, which may fail if it
 		// does not exist yet.
-		_, err = c.Set(zkChroot+"/"+frameworkName+"_reconciliation",
+		_, err = c.Set(zkChroot + "/" + frameworkName + "_reconciliation",
 			serializedReconciliationInfo,
 			-1)
 		if err != zk.ErrNoNode {
@@ -127,10 +105,10 @@ func UpdateReconciliationInfo(
 		}
 
 		// attempt to create the node, as it does not exist
-		_, err = c.Create(zkChroot+"/"+frameworkName+"_reconciliation",
+		_, err = c.Create(zkChroot + "/" + frameworkName + "_reconciliation",
 			serializedReconciliationInfo,
 			0,
-			zk.WorldACL(zk.PermAll),
+			zkAcls,
 		)
 		if err != nil {
 			return err
@@ -145,30 +123,31 @@ func UpdateReconciliationInfo(
 	log.Info("persisting reconciliation info to zookeeper")
 	// Use extra retries here because we really don't want to fall out of
 	// sync here.
-	for retries := 0; retries < RPC_RETRIES*2; retries++ {
+	for retries := 0; retries < RPC_RETRIES * 2; retries++ {
 		outerErr = request()
 		if outerErr == nil {
 			break
 		}
-		log.Warningf("Failed to configure cluster for new instance: %+v.  "+
-			"Backing off for %d seconds and retrying.", outerErr, backoff)
+		log.Warningf("Failed to configure cluster for new instance: %+v.  " +
+		"Backing off for %d seconds and retrying.", outerErr, backoff)
 		time.Sleep(time.Duration(backoff) * time.Second)
-		backoff = int(math.Min(float64(backoff<<1), 8))
+		backoff = int(math.Min(float64(backoff << 1), 8))
 	}
 	return outerErr
 }
 
-func GetPreviousFrameworkID(
-	zkServers []string,
-	zkChroot string,
-	frameworkName string,
-) (fwid string, err error) {
+
+func GetPreviousFrameworkID(zkServers []string, zkChroot string, zkAcls []zk.ACL,frameworkName string, ) (fwid string, err error) {
 	request := func() (string, error) {
 		c, _, err := zk.Connect(zkServers, RPC_TIMEOUT)
 		if err != nil {
 			return "", err
 		}
 		defer c.Close()
+		for _, acl := range zkAcls {
+			c.AddAuth(acl.Scheme, []byte(acl.ID))
+		}
+
 		rawData, _, err := c.Get(zkChroot + "/" + frameworkName + "_framework_id")
 		return string(rawData), err
 	}
@@ -180,22 +159,21 @@ func GetPreviousFrameworkID(
 			return fwid, err
 		}
 		time.Sleep(time.Duration(backoff) * time.Second)
-		backoff = int(math.Min(float64(backoff<<1), 8))
+		backoff = int(math.Min(float64(backoff << 1), 8))
 	}
 	return "", err
 }
 
-func GetPreviousReconciliationInfo(
-	zkServers []string,
-	zkChroot string,
-	frameworkName string,
-) (recon map[string]string, err error) {
+func GetPreviousReconciliationInfo(zkServers []string, zkChroot string, zkAcls []zk.ACL,frameworkName string, ) (recon map[string]string, err error) {
 	request := func() (map[string]string, error) {
 		c, _, err := zk.Connect(zkServers, RPC_TIMEOUT)
 		if err != nil {
 			return map[string]string{}, err
 		}
 		defer c.Close()
+		for _, acl := range zkAcls {
+			c.AddAuth(acl.Scheme, []byte(acl.ID))
+		}
 		rawData, _, err := c.Get(zkChroot + "/" + frameworkName + "_reconciliation")
 		if err == zk.ErrNoNode {
 			return map[string]string{}, nil
@@ -215,23 +193,23 @@ func GetPreviousReconciliationInfo(
 			return recon, err
 		}
 		time.Sleep(time.Duration(backoff) * time.Second)
-		backoff = int(math.Min(float64(backoff<<1), 8))
+		backoff = int(math.Min(float64(backoff << 1), 8))
 	}
 	return recon, err
 }
 
-func ClearZKState(
-	zkServers []string,
-	zkChroot string,
-	frameworkName string,
-) error {
+func ClearZKState(zkServers []string, zkChroot string, zkAcls []zk.ACL, frameworkName string) error {
 	c, _, err := zk.Connect(zkServers, RPC_TIMEOUT)
 	if err != nil {
 		return err
 	}
 	defer c.Close()
-	err1 := c.Delete(zkChroot+"/"+frameworkName+"_framework_id", -1)
-	err2 := c.Delete(zkChroot+"/"+frameworkName+"_reconciliation", -1)
+	for _, acl := range zkAcls {
+		c.AddAuth(acl.Scheme, []byte(acl.ID))
+	}
+
+	err1 := c.Delete(zkChroot + "/" + frameworkName + "_framework_id", -1)
+	err2 := c.Delete(zkChroot + "/" + frameworkName + "_reconciliation", -1)
 	if err1 != nil {
 		return err1
 	} else if err2 != nil {
@@ -262,7 +240,7 @@ func masterInfoFromZKNodes(children []string, ng nodeGetter, codecs map[string]d
 
 	// process children deterministically, preferring json to protobuf
 	sort.Sort(sort.Reverse(sort.StringSlice(children)))
-childloop:
+	childloop:
 	for i := range children {
 		for p := range codecs {
 			if strings.HasPrefix(children[i], p) {
@@ -283,7 +261,7 @@ childloop:
 
 	sort.Sort(sort.StringSlice(children))
 	var (
-		info   mesos.MasterInfo
+		info mesos.MasterInfo
 		lowest = children[0]
 	)
 	rawData, err := ng(mapped[lowest].node)
@@ -338,10 +316,10 @@ func addressFrom(info *mesos.MasterInfo) string {
 func addressFromRaw(rawData string) (string, error) {
 	// scrape the contents of the raw buffer for anything that looks like a PID
 	var (
-		mraw   = strings.Split(string(rawData), "@")[1]
-		mraw2  = strings.Split(mraw, ":")
-		host   = mraw2[0]
-		port   = 0
+		mraw = strings.Split(string(rawData), "@")[1]
+		mraw2 = strings.Split(mraw, ":")
+		host = mraw2[0]
+		port = 0
 		_, err = fmt.Sscanf(mraw2[1], "%d", &port)
 	)
 	if err != nil {
@@ -350,13 +328,21 @@ func addressFromRaw(rawData string) (string, error) {
 	return net.JoinHostPort(host, strconv.Itoa(port)), nil
 }
 
+
+// need master
 func GetMasterFromZK(zkURI string) (string, error) {
-	servers, chroot, err := ParseZKURI(zkURI)
+	servers, chroot, acls, err := cli.ParseZKURI(zkURI)
+	if err != nil {
+		return "", nil
+	}
 	c, _, err := zk.Connect(servers, RPC_TIMEOUT)
 	if err != nil {
 		return "", err
 	}
 	defer c.Close()
+	for _, acl := range acls {
+		c.AddAuth(acl.Scheme, []byte(acl.ID))
+	}
 
 	children, _, err := c.Children(chroot)
 	if err != nil {

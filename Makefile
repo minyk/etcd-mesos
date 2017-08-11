@@ -123,7 +123,7 @@ compile lint test ci : dev-container
 	@SSH1="" ; SSH2="" ;\
 	if [ "x$$sha" = "x" ] ; then sha=`git rev-parse HEAD`; fi ;\
         if [ ! -z "$$SSH_AUTH_SOCK" ] ; then SSH1="-e SSH_AUTH_SOCK=/root/.foo -v $$SSH_AUTH_SOCK:/root/.foo" ; fi ; \
-        if [ -e ~/.ssh/id_rsa ]; then SSH2="-v ~/.ssh/id_rsa:/root/.ssh/id_rsa" ; fi ; \
+        if [ -e $$HOME/.ssh/id_rsa ]; then SSH2="-v $$HOME/.ssh/id_rsa:/root/.ssh/id_rsa" ; fi ; \
 	if [ ! -e /.dockerenv -o ! -z "$JENKINS_URL" ];  then \
 	AWS=$$(env | grep AWS | xargs -n 1 -IXX echo -n ' -e XX') ;\
 	echo ; \
@@ -143,7 +143,7 @@ compile lint test ci : dev-container
 		make docker_$@ ;\
 	fi
 
-upload-container: ## uploads to .  You need to have credentials.  Make sure you set DOCKER_CONFIG=`cd ~/.docker-hub-f4tq/;pwd`
+upload-container: ## uploads to .  You need to have credentials.  Make sure you set DOCKER_CONFIG=`cd $$HOME/.docker-hub-f4tq/;pwd`
 upload-container: container tag
 	set -x; if [ ! -z "$(PUBLISH_TAG)" ]; then \
 	docker push $(PUBLISH_TAG):`cat VERSION` ; \
@@ -218,12 +218,12 @@ clean-dev:
 run-dev:  ##  Runs shell in mesosphere/etcd-mesos:dev container mounting the current directly.  Maps in your ssh-agent and keeps a bash-history outside the container so you have history between invocations.
 run-dev: dev-container
 #       save bash history in-between runs...
-	@if [ ! -f ~/.bash_history-etcd-mesos-dev ]; then touch ~/.bash_history-etcd-mesos-dev; fi
+	@if [ ! -f $$HOME/.bash_history-etcd-mesos-dev ]; then touch $$HOME/.bash_history-etcd-mesos-dev; fi
 #       mount the current directory into the dev build
 #       map ssh-agent's auth-sock into the container instance.  the pipe needs to be on non-external volume hence /root/.foo
 	@SSH1="" ; SSH2="" ;\
         if [ ! -z "$$SSH_AUTH_SOCK" ] ; then SSH1="-e SSH_AUTH_SOCK=/root/.foo -v $$SSH_AUTH_SOCK:/root/.foo" ; fi ; \
-        if [ -e ~/.ssh/id_rsa ]; then SSH2="-v ~/.ssh/id_rsa:/root/.ssh/id_rsa" ; fi ; \
+        if [ -e $$HOME/.ssh/id_rsa ]; then SSH2="-v $$HOME/.ssh/id_rsa:/root/.ssh/id_rsa" ; fi ; \
         AWS=$$(env | grep AWS | xargs -n 1 -IXX echo -n ' -e XX'); \
 	docker run -i --rm --net host  $$SSH1 $$SSH2 $$AWS -e HISTSIZE=100000  -v $$HOME/.bash_history-etcd-mesos-dev:/root/.bash_history -v `pwd`:/go/src/github.com/mesosphere/etcd-mesos -w /go/src/github.com/mesosphere/etcd-mesos -t mesosphere/etcd-mesos:dev bash ; \
 	if [ $$? -ne 0 ]; then echo wow ; fi
