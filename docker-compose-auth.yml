@@ -79,7 +79,7 @@ services:
       - /sys/fs/cgroup:/sys/fs/cgroup
       - /usr/bin/docker:/usr/bin/docker
       - /var/run/docker.sock:/var/run/docker.sock
-#      - /tmp/mesos1:/sandbox
+      - /run:/run
       - ./fixtures/credentials/agent.json:/etc/ethos/agent:ro
     tmpfs: /sandbox
     depends_on:
@@ -105,7 +105,7 @@ services:
       - /sys/fs/cgroup:/sys/fs/cgroup
       - /usr/bin/docker:/usr/bin/docker
       - /var/run/docker.sock:/var/run/docker.sock
-#      - /tmp/mesos2:/sandbox
+      - /run:/run
       - ./fixtures/credentials/agent.json:/etc/ethos/agent:ro
     tmpfs: /sandbox
     depends_on:
@@ -131,7 +131,7 @@ services:
       - /sys/fs/cgroup:/sys/fs/cgroup
       - /usr/bin/docker:/usr/bin/docker
       - /var/run/docker.sock:/var/run/docker.sock
-#      - /tmp/mesos3:/sandbox
+      - /run:/run
       - ./fixtures/credentials/agent.json:/etc/ethos/agent:ro
     tmpfs: /sandbox
     depends_on:
