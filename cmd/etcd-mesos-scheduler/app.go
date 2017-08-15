@@ -222,26 +222,30 @@ func main() {
 			}
 		}
 	}
-	log.Infof("mesos credentials: %v",cred)
 
-//	zkServers, zkChroot, err := rpc.ParseZKURI(*zkFrameworkPersist)
 	zkServers,zkChroot,zkAcls,err := cli.ParseZKURI(*zkFrameworkPersist)
 	if err != nil{
 		log.Fatalf("Bad format for zk %s due to: %s", *zkFrameworkPersist,err)
 	}
-	log.Infof("zkFramework servers: %s zkChroot: %s zkAcl: %v", zkServers,zkChroot,zkAcls)
 
 	etcdScheduler.ZkServers = zkServers
 	etcdScheduler.ZkChroot = zkChroot
 	etcdScheduler.ZkAcls = zkAcls
-
+	if cred != nil && cred.Principal!=nil && cred.Secret != nil {
+		if etcdScheduler.ZkAcls == nil {
+			etcdScheduler.ZkAcls = make([]zk.ACL, 0)
+		}
+//		aa := zk.DigestACL(zk.PermAll, *cred.Principal, *cred.Secret)
+		aa:= zk.ACL{Perms: zk.PermAll, Scheme: "digest", ID: fmt.Sprintf("%s:%s",*cred.Principal,*cred.Secret)}
+		etcdScheduler.ZkAcls = append(etcdScheduler.ZkAcls, aa)
+	}
 	if err != nil && *zkFrameworkPersist != "" {
 		log.Fatalf("Error parsing zookeeper URI of %s: %s", *zkFrameworkPersist, err)
 	} else if *zkFrameworkPersist != "" {
 		previous, err := rpc.GetPreviousFrameworkID(
-			zkServers,
-			zkChroot,
-			zkAcls,
+			etcdScheduler.ZkServers,
+			etcdScheduler.ZkChroot,
+			etcdScheduler.ZkAcls,
 			etcdScheduler.FrameworkName,
 		)
 		if err != nil && err != zk.ErrNoNode {

@@ -30,8 +30,7 @@ export NC
 export ORNG
 export BLUE
 
-#PUBLISH_TAG?=docker-ethos-core-univ-release.dr-uw2.adobeitc.com/ethos
-PUBLISH_TAG?=dockerhub.io/mesosphere/etcd
+PUBLISH_TAG?=docker-ethos-core-univ-release.dr-uw2.adobeitc.com/ethos
 
 help:
 	@printf "\033[1m$$ASCISKMSGATE $$NC\n"
@@ -40,7 +39,7 @@ help:
 
 
 SOURCES:=$(shell find . \( -name vendor \) -prune -o  -name '*.go')
-.PHONY: ci test build
+.PHONY: ci test build  
 
 
 default: compile
@@ -61,16 +60,16 @@ install-tools:
 	@which govendor || go get -u github.com/kardianos/govendor
 	@which go-bindata || go get -u github.com/jteeuwen/go-bindata/...
 
-bin/etcd: $(SOURCES) vendor/vendor.json
+bin/etcd: $(SOURCES) vendor/vendor.json 
 	cd vendor/github.com/coreos/etcd && ./build; mv bin/* ../../../../bin/
 
-bin/etcd-mesos-scheduler: $(SOURCES) vendor/vendor.json
+bin/etcd-mesos-scheduler: $(SOURCES) vendor/vendor.json $(SOURCES)
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64  go build -o bin/etcd-mesos-scheduler cmd/etcd-mesos-scheduler/app.go
 
-bin/etcd-mesos-executor: $(SOURCES) vendor/vendor.json
+bin/etcd-mesos-executor: $(SOURCES) vendor/vendor.json $(SOURCES)
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64  go build -o bin/etcd-mesos-executor cmd/etcd-mesos-executor/app.go
 
-bin/etcd-mesos-proxy: $(SOURCES) vendor/vendor.json
+bin/etcd-mesos-proxy: $(SOURCES) vendor/vendor.json $(SOURCES)
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64  go build -o bin/etcd-mesos-proxy cmd/etcd-mesos-proxy/app.go
 
 run-scheduler:
@@ -143,20 +142,17 @@ compile lint test ci : dev-container
 		make docker_$@ ;\
 	fi
 
-upload-container: ## uploads to .  You need to have credentials.  Make sure you set DOCKER_CONFIG=`cd $$HOME/.docker-hub-f4tq/;pwd`
-upload-container: container tag
-	set -x; if [ ! -z "$(PUBLISH_TAG)" ]; then \
-	docker push $(PUBLISH_TAG):`cat VERSION` ; \
-	fi 
 
-tag:  ## tag the image with the provided PUBLISH_TAG 
-tag:
-	@echo "tagging $(PUBLISH_TAG)"
-	@if [ "x$$sha" = "x" ] ; then sha=`git rev-parse HEAD`; fi ;\
-	if [ ! -z "$(PUBLISH_TAG)" ]; then \
-	docker tag mesosphere/etcd-mesos:$$sha $(PUBLISH_TAG):$$(cat VERSION) ; \
-	fi ; \
-	echo "tagged ..."
+build-container: ## builds and tags to the current VERSION
+build-container: container tag-container
+
+tag-container: ## Apply docker upstream tags
+tag-container:
+	docker tag adobeplatform/ethos-etcd-mesos:`git rev-parse HEAD` $(PUBLISH_TAG)/ethos-etcd-mesos:`cat VERSION`
+
+#upload-container: ## uploads to adobeplatform.  You need to have credentials.  Make sure you set DOCKER_CONFIG=`cd $$HOME/.docker-hub-f4tq/;pwd`
+upload-container: build-container
+	docker push $(PUBLISH_TAG)/ethos-etcd-mesos:`cat VERSION` 
 
 # build: calls test (which takes forever).  compile doesn't rebuild unless something changed
 container: ## builds mesosphere/etcd-mesos:<current sha> AND tags it latest
@@ -164,8 +160,8 @@ container: compile Dockerfile
 	# It's useful to tag image as 'latest' for use with docker-compose.  It will not be pushed by the Makefile.
 	@set -x; if [ "x$$sha" = "x" ] ; then sha=`git rev-parse HEAD`; fi ;\
 	strip bin/etcd bin/etcdctl bin/etcd-mesos-scheduler bin/etcd-mesos-executor bin/etcd-mesos-proxy ;\
-	docker build --tag mesosphere/etcd-mesos:$$sha . ; \
-	docker tag mesosphere/etcd-mesos:$$sha mesosphere/etcd-mesos:latest ;\
+	docker build --tag adobeplatform/ethos-etcd-mesos:$$sha . ; \
+	docker tag adobeplatform/ethos-etcd-mesos:$$sha adobeplatform/ethos-etcd-mesos:latest ;\
 
 dev-container:  ##  makes dev-container.  runs make install-tools in dev-container.  Builds mesosphere/etcd-mesos:dev
 dev-container: Dockerfile-dev

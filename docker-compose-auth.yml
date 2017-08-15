@@ -26,7 +26,7 @@ services:
 #       timeout: 10s
 #       retries: 5
   master:
-    image: mesosphere/mesos-master:1.2.0-rc2
+    image: mesosphere/mesos-master:1.2.2-rc1
     networks:
       etcd-test-tier:
         aliases:
@@ -43,6 +43,12 @@ services:
       MESOS_AUTHENTICATE: "true"
       MESOS_AUTHENTICATE_AGENTS: "true"
       MESOS_AUTHENTICATORS: crammd5
+      MESOS_REGISTRY_STORE_TIMEOUT: 60secs
+      MESOS_REGISTRY_FETCH_TIMEOUT: 60secs
+      MESOS_SLAVE_REMOVAL_RATE_LIMIT: 1/20mins
+      MESOS_OFFER_TIMEOUT: 2mins
+      MESOS_HOSTNAME_LOOKUP: "false"
+      MESOS_MAX_SLAVE_PING_TIMEOUTS: 20
 
     volumes:
       - ./fixtures/credentials/server.json:/etc/ethos/server:ro
@@ -53,7 +59,7 @@ services:
       - zk
 
   proxy:
-    image: mesosphere/mesos-slave:1.2.0-rc2
+    image: mesosphere/mesos-slave:1.2.2-rc1
     networks:
       etcd-test-tier:
         aliases:
@@ -81,7 +87,7 @@ services:
       - master
       
   control:
-    image: mesosphere/mesos-slave:1.2.0-rc2
+    image: mesosphere/mesos-slave:1.2.2-rc1
     networks:
       etcd-test-tier:
         aliases:
@@ -107,7 +113,7 @@ services:
       - master
       
   worker:
-    image: mesosphere/mesos-slave:1.2.0-rc2
+    image: mesosphere/mesos-slave:1.2.2-rc1
     networks:
       etcd-test-tier:
         aliases:
@@ -133,14 +139,13 @@ services:
       - master
 
   etcd:
-    image: mesosphere/etcd-mesos:latest
-#    image: docker-ethos-core-univ-release.dr-uw2.adobeitc.com/ethos/etcd-mesos:0.1.3 
+    image: adobeplatform/ethos-etcd-mesos:latest
     networks:
       etcd-test-tier:
         aliases:
            - etcd.mesos
 
-    command: /work/bin/etcd-mesos-scheduler -alsologtostderr=true  -cluster-size=1 -master="zk://digest:user1:pw1,digest:user2:pw2@zk.mesos:2181/mesos" -zk-framework-persist="zk://digest:user2:pw2@zk.mesos:2181/etcd"  -v=1 -auto-reseed=true -reseed-timeout=240 -sandbox-disk-limit=1024 -sandbox-cpu-limit=1 -sandbox-mem-limit=256 -admin-port=8820 -driver-port=8821 -artifact-port=8822  -mesos-authentication-principal=principal2 -mesos-authentication-secret-file=/etc/ethos/etcd --task-constraints "ethos_role:LIKE:proxy" 
+    command: /work/bin/etcd-mesos-scheduler -alsologtostderr=true  -cluster-size=1 -master="zk://zk.mesos:2181/mesos" -zk-framework-persist="zk://zk.mesos:2181/etcd"  -v=5 -auto-reseed=true -reseed-timeout=240 -sandbox-disk-limit=1024 -sandbox-cpu-limit=1 -sandbox-mem-limit=256 -admin-port=8820 -driver-port=8821 -artifact-port=8822  -mesos-authentication-principal=principal2 -mesos-authentication-secret-file=/etc/ethos/etcd --task-constraints "ethos_role:LIKE:proxy" 
 
 #    command: /work/bin/etcd-mesos-scheduler -alsologtostderr=true -address=etcd.mesos -framework-name=\\${FRAMEWORK_NAME} -cluster-size=\\${CLUSTER_SIZE} -master=\\${MESOS_MASTER} -zk-framework-persist=\\${ZK_PERSIST} -v=\\${VERBOSITY} -auto-reseed=\\${AUTO_RESEED} -reseed-timeout=\\${RESEED_TIMEOUT} -sandbox-disk-limit=\\${DISK_LIMIT} -sandbox-cpu-limit=\\${CPU_LIMIT} -sandbox-mem-limit=\\${MEM_LIMIT} -admin-port=\\${PORT0} -driver-port=\\${PORT1} -artifact-port=\\${PORT2} -framework-weburi=\\${WEBURI} -mesos-authentication-principal=\\${MESOS_AUTHENTICATION_PRINICPAL} -mesos-authentication-secret-file=\\${MESOS_AUTHENTICATION_SECRET_FILE} --task-constraints \\${TASK_CONSTRAINTS}
 

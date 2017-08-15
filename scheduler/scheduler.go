@@ -169,7 +169,7 @@ func NewEtcdScheduler(
 		),
 		healthCheck:                  rpc.HealthCheck,
 		shutdown:                     func() { os.Exit(1) },
-		reconciliationInfoFunc:       rpc.GetPreviousReconciliationInfo,
+		reconciliationInfoFunc:       rpc.	GetPreviousReconciliationInfo,
 		updateReconciliationInfoFunc: rpc.UpdateReconciliationInfo,
 		singleInstancePerSlave:       singleInstancePerSlave,
 		diskPerTask:                  diskPerTask,
@@ -628,6 +628,7 @@ func (s *EtcdScheduler) attemptMasterSync(driver scheduler.SchedulerDriver) {
 				}
 			}
 		} else {
+			log.Errorf("attemptMasterSync: %v", err)
 			log.Error(err)
 		}
 		time.Sleep(time.Duration(backoff) * time.Second)
