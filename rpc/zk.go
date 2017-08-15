@@ -226,8 +226,8 @@ func GetPreviousReconciliationInfo(zkServers []string, zkChroot string, zkAcls [
 			}
 			return nil
 		}); err != nil {
-			if err == zk.ErrNodeExists {
-				return map[string]string{}, err
+			if err == zk.ErrNoNode {
+				return map[string]string{}, nil
 			}
 			time.Sleep(time.Duration(backoff) * time.Second)
 			backoff = int(math.Min(float64(backoff << 1), 8))
