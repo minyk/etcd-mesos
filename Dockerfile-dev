@@ -19,12 +19,12 @@ RUN apk add --no-cache \
 # Prepare git to use ssh-agent, ssh keys for adobe-platform; ignore interactive knownhosts questions from ssh
 # - For automated building with private repos only accessible by ssh
 #
-RUN mkdir -p /root/.ssh && chmod og-rwx /root/.ssh && \
-    echo "Host * " > /root/.ssh/config && \
-    echo "StrictHostKeyChecking no " >> /root/.ssh/config && \
-    echo "UserKnownHostsFile=/dev/null" >> /root/.ssh/config && \
-    git config --global url."git@github.com:adobe-platform".insteadOf "https://github.com/adobe-platform" && \
-    git config --global url."git@github.com:behance".insteadOf "https://github.com/behance"
+#RUN mkdir -p /root/.ssh && chmod og-rwx /root/.ssh && \
+#    echo "Host * " > /root/.ssh/config && \
+#    echo "StrictHostKeyChecking no " >> /root/.ssh/config && \
+#    echo "UserKnownHostsFile=/dev/null" >> /root/.ssh/config && \
+#    git config --global url."git@github.com:adobe-platform".insteadOf "https://github.com/adobe-platform" && \
+#    git config --global url."git@github.com:behance".insteadOf "https://github.com/behance"
 
 
 CMD /bin/bash
