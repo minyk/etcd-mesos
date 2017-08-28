@@ -86,12 +86,14 @@ func HealthCheck(running map[string]*config.Node) error {
 	if ok := client.SyncCluster(); !ok {
 		log.Errorf("Could not establish connection "+
 			"with cluster using endpoints %s", validEndpoint)
+		client.Close()
 		return errors.ErrEtcdConnection
 	}
 
 	resp1, err := client.Get("/", false, false)
 	if err != nil {
 		log.Errorf("Could not query cluster: %s", err)
+		client.Close()
 		return errors.ErrEtcdEndpoint
 	}
 
@@ -101,19 +103,24 @@ func HealthCheck(running map[string]*config.Node) error {
 	resp2, err := client.Get("/", false, false)
 	if err != nil {
 		log.Errorf("Could not query cluster: %s", err)
+		client.Close()
 		return errors.ErrEtcdEndpoint
 	}
 
 	if resp1.RaftTerm != resp2.RaftTerm {
 		log.Error("Raft terms has increased while monitoring for " +
 			"1 second.  Leader is unstable.")
+		client.Close()
 		return errors.ErrEtcdRaftTermInstability
 	}
 
 	if resp1.RaftIndex == resp2.RaftIndex {
 		log.Error("Raft commit index has not increased while " +
 			"monitoring for 1 second.  The cluster is not making progress.")
+		client.Close()
 		return errors.ErrEtcdRaftStall
 	}
+
+	client.Close()
 	return nil
 }
