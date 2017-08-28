@@ -180,7 +180,7 @@ func main() {
 	etcdScheduler.Master = *master
 	etcdScheduler.FrameworkName = *frameworkName
 	etcdScheduler.ZkConnect = *zkFrameworkPersist
-	if constraint != nil {
+	if *constraint != "" {
 		// a marathon-esque attribute of the for property:[LIKE,UNLIKE]:value that gets used against slave attributes
 		if err := etcdScheduler.AddRawConstraints(*constraint); err != nil {
 			log.Fatal(err)
