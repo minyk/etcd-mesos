@@ -31,7 +31,7 @@ export ORNG
 export BLUE
 
 #PUBLISH_TAG?=docker-ethos-core-univ-release.dr-uw2.adobeitc.com/ethos
-PUBLISH_TAG?=dockerhub.io/mesosphere/etcd
+PUBLISH_TAG?=bootstrap.dcos.ajway.kr:5000/drake.min/etcd-mesos
 
 help:
 	@printf "\033[1m$$ASCISKMSGATE $$NC\n"
@@ -132,7 +132,7 @@ compile lint test ci : dev-container
 	echo "Running target \"$@\" inside Docker container..." ; \
 	echo "------------------------------------------------" ; \
 	echo ; \
-	docker run -i --rm $$SSH1 $$SSH2 $$AWS\
+	docker run -i --rm \
 		--name=etcd_mesos_make_docker_$@ \
 		-e sha=$$sha \
         -v $$(pwd):/go/src/github.com/mesosphere/etcd-mesos \

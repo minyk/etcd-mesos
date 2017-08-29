@@ -119,7 +119,7 @@
 			"versionExact": "v2.3.8"
 		},
 		{
-			"checksumSHA1": "gEwsRuA3ABfKq36Sz/IEAs8pMFM=",
+			"checksumSHA1": "hvcUJkCvar61gLqLojcFPjZBAIs=",
 			"path": "github.com/coreos/etcd/Godeps/_workspace/src/github.com/google/btree",
 			"revision": "7e4fc7eaa931298732c880a703bccc9c177ae1de",
 			"revisionTime": "2017-02-16T03:25:01Z",
@@ -255,7 +255,7 @@
 			"versionExact": "v2.3.8"
 		},
 		{
-			"checksumSHA1": "8XpFaQL5RZD5r+4xJpqHvR+X0Ms=",
+			"checksumSHA1": "ziac4S4bJ1s+HbU1j6MLJ9gTZUk=",
 			"path": "github.com/coreos/etcd/Godeps/_workspace/src/golang.org/x/sys/unix",
 			"revision": "7e4fc7eaa931298732c880a703bccc9c177ae1de",
 			"revisionTime": "2017-02-16T03:25:01Z",
@@ -785,7 +785,7 @@
 			"revisionTime": "2017-03-31T03:19:02Z"
 		},
 		{
-			"checksumSHA1": "mygGPzw0Q81XnyUgA7+YYDIjYD8=",
+			"checksumSHA1": "kHrNY4ktruLxWd+qxbMw90KfO1Y=",
 			"path": "github.com/google/btree",
 			"revision": "316fb6d3f031ae8f4d457c6c5186b9e3ded70435",
 			"revisionTime": "2016-12-17T18:35:37Z"
@@ -1008,7 +1008,7 @@
 			"revisionTime": "2017-04-23T14:02:46Z"
 		},
 		{
-			"checksumSHA1": "5doqijfnq0+LgwEQ2INsrJkzpTc=",
+			"checksumSHA1": "x2MJ2Le3tDy/eLDjDz9vq/iLmnU=",
 			"path": "golang.org/x/sys/unix",
 			"revision": "8c0a5eacbac818f9011015b17992f53d9cec3e8f",
 			"revisionTime": "2017-04-04T16:46:32Z"

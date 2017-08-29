@@ -1,5 +1,5 @@
 FROM       alpine:3.5
-MAINTAINER Adobe Ethos Dev Team <Ethos_Dev@adobe.com>
+MAINTAINER Youngkun Min <drake.min@ajway.kr>
 ADD bin /work/bin
 ADD static /work/static
 WORKDIR /work
