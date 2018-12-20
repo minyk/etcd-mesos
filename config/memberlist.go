@@ -19,7 +19,7 @@
 package config
 
 import (
-	"github.com/coreos/etcd/etcdserver/etcdhttp/httptypes"
+	"github.com/coreos/etcd/etcdserver/api/v2http/httptypes"
 )
 
 // ClusterMemberList is used for deserializing the responses from

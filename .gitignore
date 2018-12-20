@@ -3,6 +3,8 @@ bin
 gopath
 etcd_executor
 etcd_scheduler
+.idea
+*.iml
 
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
 *.o

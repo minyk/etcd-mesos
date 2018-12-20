@@ -1,4 +1,4 @@
-FROM       golang:1.8.1-alpine
+FROM       golang:1.11.4-alpine
 
 # install runtime scripts
 ADD . $GOPATH/src/git.corp.adobe.com/adobe-platform/etcd-mesos

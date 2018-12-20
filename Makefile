@@ -39,7 +39,7 @@ help:
 
 
 SOURCES:=$(shell find . \( -name vendor \) -prune -o  -name '*.go')
-.PHONY: ci test build  
+.PHONY: ci test build
 
 
 default: compile
@@ -60,8 +60,9 @@ install-tools:
 	@which govendor || go get -u github.com/kardianos/govendor
 	@which go-bindata || go get -u github.com/jteeuwen/go-bindata/...
 
-bin/etcd: $(SOURCES) vendor/vendor.json 
-	cd vendor/github.com/coreos/etcd && ./build; mv bin/* ../../../../bin/
+bin/etcd: $(SOURCES) vendor/vendor.json
+	wget "https://github.com/etcd-io/etcd/releases/download/v3.3.10/etcd-v3.3.10-linux-amd64.tar.gz" -P ./bin -O etcd-v3.3.10-linux-amd64.tar.gz
+	tar zxf ./bin/etcd-v3.3.10-linux-amd64.tar.gz etcd-v3.3.10-linux-amd64/etcd -C ./bin --strip 1
 
 bin/etcd-mesos-scheduler: $(SOURCES) vendor/vendor.json $(SOURCES)
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64  go build -o bin/etcd-mesos-scheduler cmd/etcd-mesos-scheduler/app.go
@@ -113,7 +114,7 @@ docker_test_ci: install-deps docker_lint docker_compile
 docker_ci: docker_test_ci docker_compile
 compile:  ##  compiles your project.  uses the dev-container
 lint:  ##  lints the project.  Inside a container
-ci:  ##  target for jenkins.  Inside a container 
+ci:  ##  target for jenkins.  Inside a container
 test:  ##  tests the project.  Inside a container
 compile lint test ci : dev-container
 #   either ssh key or agent is needed to pull private sources from git
@@ -152,7 +153,7 @@ tag-container:
 
 #upload-container: ## uploads to adobeplatform.  You need to have credentials.  Make sure you set DOCKER_CONFIG=`cd $$HOME/.docker-hub-f4tq/;pwd`
 upload-container: build-container
-	docker push $(PUBLISH_TAG)/ethos-etcd-mesos:`cat VERSION` 
+	docker push $(PUBLISH_TAG)/ethos-etcd-mesos:`cat VERSION`
 
 # build: calls test (which takes forever).  compile doesn't rebuild unless something changed
 container: ## builds mesosphere/etcd-mesos:<current sha> AND tags it latest
@@ -223,6 +224,3 @@ run-dev: dev-container
         AWS=$$(env | grep AWS | xargs -n 1 -IXX echo -n ' -e XX'); \
 	docker run -i --rm --net host  $$SSH1 $$SSH2 $$AWS -e HISTSIZE=100000  -v $$HOME/.bash_history-etcd-mesos-dev:/root/.bash_history -v `pwd`:/go/src/github.com/mesosphere/etcd-mesos -w /go/src/github.com/mesosphere/etcd-mesos -t mesosphere/etcd-mesos:dev bash ; \
 	if [ $$? -ne 0 ]; then echo wow ; fi
-
-
-
