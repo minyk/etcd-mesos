@@ -21,24 +21,24 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/gogo/protobuf/proto"
+	log "github.com/golang/glog"
+	"github.com/mesos/mesos-go/api/v0/auth"
+	"github.com/mesos/mesos-go/api/v0/auth/sasl"
+	"github.com/mesos/mesos-go/api/v0/auth/sasl/mech"
+	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
+	"github.com/mesos/mesos-go/api/v0/scheduler"
+	"github.com/samuel/go-zookeeper/zk"
+	"golang.org/x/net/context"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
 	"os/user"
-	"github.com/gogo/protobuf/proto"
-	log "github.com/golang/glog"
-	"github.com/mesos/mesos-go/auth"
-	"github.com/mesos/mesos-go/auth/sasl"
-	"github.com/mesos/mesos-go/auth/sasl/mech"
-	mesos "github.com/mesos/mesos-go/mesosproto"
-	"github.com/mesos/mesos-go/scheduler"
-	"github.com/samuel/go-zookeeper/zk"
-	"golang.org/x/net/context"
 
+	"github.com/adobe-platform/zk-cli/cli"
 	"github.com/mesosphere/etcd-mesos/rpc"
 	etcdscheduler "github.com/mesosphere/etcd-mesos/scheduler"
-	"github.com/adobe-platform/zk-cli/cli"
 )
 
 func parseIP(address string) net.IP {
@@ -188,9 +188,9 @@ func main() {
 	}
 	// with alpine linux, user.Current() can be empty. If it's empty, mesos-go cannot fill in the user
 	// so provide one: root.  otherwise, the framework will NOT register
-	defaultUser:=""
-	if usr,err := user.Current(); err != nil || usr==nil  {
-		defaultUser="root"
+	defaultUser := ""
+	if usr, err := user.Current(); err != nil || usr == nil {
+		defaultUser = "root"
 	} else {
 		defaultUser = usr.Username
 	}
@@ -218,25 +218,25 @@ func main() {
 				log.Fatal("failed to read secret file: ", err.Error())
 			}
 			if secret != nil {
-					cred.Secret = proto.String(string(secret))
+				cred.Secret = proto.String(string(secret))
 			}
 		}
 	}
 
-	zkServers,zkChroot,zkAcls,err := cli.ParseZKURI(*zkFrameworkPersist)
-	if err != nil{
-		log.Fatalf("Bad format for zk %s due to: %s", *zkFrameworkPersist,err)
+	zkServers, zkChroot, zkAcls, err := cli.ParseZKURI(*zkFrameworkPersist)
+	if err != nil {
+		log.Fatalf("Bad format for zk %s due to: %s", *zkFrameworkPersist, err)
 	}
 
 	etcdScheduler.ZkServers = zkServers
 	etcdScheduler.ZkChroot = zkChroot
 	etcdScheduler.ZkAcls = zkAcls
-	if cred != nil && cred.Principal!=nil && cred.Secret != nil {
+	if cred != nil && cred.Principal != nil && cred.Secret != nil {
 		if etcdScheduler.ZkAcls == nil {
 			etcdScheduler.ZkAcls = make([]zk.ACL, 0)
 		}
-//		aa := zk.DigestACL(zk.PermAll, *cred.Principal, *cred.Secret)
-		aa:= zk.ACL{Perms: zk.PermAll, Scheme: "digest", ID: fmt.Sprintf("%s:%s",*cred.Principal,*cred.Secret)}
+		//		aa := zk.DigestACL(zk.PermAll, *cred.Principal, *cred.Secret)
+		aa := zk.ACL{Perms: zk.PermAll, Scheme: "digest", ID: fmt.Sprintf("%s:%s", *cred.Principal, *cred.Secret)}
 		etcdScheduler.ZkAcls = append(etcdScheduler.ZkAcls, aa)
 	}
 	if err != nil && *zkFrameworkPersist != "" {

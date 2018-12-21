@@ -34,9 +34,9 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	log "github.com/golang/glog"
-	mesos "github.com/mesos/mesos-go/mesosproto"
-	util "github.com/mesos/mesos-go/mesosutil"
-	"github.com/mesos/mesos-go/scheduler"
+	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
+	util "github.com/mesos/mesos-go/api/v0/mesosutil"
+	"github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/samuel/go-zookeeper/zk"
 
 	"github.com/mesosphere/etcd-mesos/config"
@@ -75,7 +75,6 @@ const (
 type Constraint []string
 type Constraints []Constraint
 
-
 type EtcdScheduler struct {
 	Stats                        Stats
 	Master                       string
@@ -90,8 +89,8 @@ type EtcdScheduler struct {
 	desiredInstanceCount         int
 	healthCheck                  func(map[string]*config.Node) error
 	shutdown                     func()
-	reconciliationInfoFunc       func([]string, string, []zk.ACL,string) (map[string]string, error)
-	updateReconciliationInfoFunc func(map[string]string, []string, string,  []zk.ACL,string) error
+	reconciliationInfoFunc       func([]string, string, []zk.ACL, string) (map[string]string, error)
+	updateReconciliationInfoFunc func(map[string]string, []string, string, []zk.ACL, string) error
 	mut                          sync.RWMutex
 	state                        State
 	frameworkID                  *mesos.FrameworkID
@@ -169,7 +168,7 @@ func NewEtcdScheduler(
 		),
 		healthCheck:                  rpc.HealthCheck,
 		shutdown:                     func() { os.Exit(1) },
-		reconciliationInfoFunc:       rpc.	GetPreviousReconciliationInfo,
+		reconciliationInfoFunc:       rpc.GetPreviousReconciliationInfo,
 		updateReconciliationInfoFunc: rpc.UpdateReconciliationInfo,
 		singleInstancePerSlave:       singleInstancePerSlave,
 		diskPerTask:                  diskPerTask,
@@ -184,13 +183,13 @@ func NewEtcdScheduler(
 // AddRawConstraints -- parses a constraint as they'd be added by Marathon.
 func (s *EtcdScheduler) AddRawConstraints(statements string) error {
 	for _, tuple := range strings.Split(statements, ";") {
-		if len(strings.TrimSpace(tuple)) > 0{
+		if len(strings.TrimSpace(tuple)) > 0 {
 			log.Warning("Skipping empty contraint")
 			continue
 		}
 		statement := strings.SplitN(strings.TrimSpace(tuple), ":", 3)
 		if len(statement) != 3 {
-			log.Warningf("invalid constraint %s",tuple)
+			log.Warningf("invalid constraint %s", tuple)
 		}
 		switch op := strings.ToUpper(statement[1]); op {
 		case "LIKE", "UNLIKE":
@@ -269,7 +268,7 @@ CONSTRAINT:
 			if subjectName == att.GetName() && att.GetText().Value != nil {
 
 				result := strings.Contains(*att.GetText().Value, constraint[2])
-				if (op == "LIKE"  && result)  || (op == "UNLIKE" && !result) {
+				if (op == "LIKE" && result) || (op == "UNLIKE" && !result) {
 
 					continue CONSTRAINT
 				}
@@ -280,7 +279,7 @@ CONSTRAINT:
 		log.V(2).Infof("Offer< %s > Rejected by constraints", offer.Id.GetValue())
 		return false
 	}
-	log.V(2).Infof("Acceptable offer < %s >  met attribute constraints %+v\n", offer.Id.GetValue(),s.constraints)
+	log.V(2).Infof("Acceptable offer < %s >  met attribute constraints %+v\n", offer.Id.GetValue(), s.constraints)
 
 	return true
 
@@ -356,7 +355,7 @@ func (s *EtcdScheduler) ResourceOffers(
 			resources.mems >= memWanted &&
 			totalPorts >= portsWanted &&
 			resources.disk >= s.diskPerTask &&
-			s.MatchesConstraints(driver,offer ) &&
+			s.MatchesConstraints(driver, offer) &&
 			s.offerCache.Push(offer) {
 
 			// golang for-loop variable reuse necessitates a copy here.
@@ -522,7 +521,7 @@ func (s *EtcdScheduler) ExecutorLost(
 func (s *EtcdScheduler) Error(driver scheduler.SchedulerDriver, err string) {
 	log.Infoln("Scheduler received error:", err)
 	if err == "Completed framework attempted to re-register" {
-		rpc.ClearZKState(s.ZkServers, s.ZkChroot, s.ZkAcls,s.FrameworkName)
+		rpc.ClearZKState(s.ZkServers, s.ZkChroot, s.ZkAcls, s.FrameworkName)
 		log.Error(
 			"Removing reference to completed " +
 				"framework in zookeeper and dying.",

@@ -31,17 +31,17 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/gogo/protobuf/proto"
-	log "github.com/golang/glog"
-	mesos "github.com/mesos/mesos-go/mesosproto"
-	"github.com/samuel/go-zookeeper/zk"
-	"github.com/adobe-platform/zk-cli/cli"
 	"crypto/sha1"
 	"encoding/base64"
+	"github.com/adobe-platform/zk-cli/cli"
+	"github.com/gogo/protobuf/proto"
+	log "github.com/golang/glog"
+	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
+	"github.com/samuel/go-zookeeper/zk"
 )
 
-func ConvertCreds(acls [] zk.ACL) []zk.ACL {
-	aa := make([] zk.ACL, 0)
+func ConvertCreds(acls []zk.ACL) []zk.ACL {
+	aa := make([]zk.ACL, 0)
 	for _, acl := range acls {
 		if acl.Scheme == "digest" {
 			h := sha1.New()
@@ -50,7 +50,7 @@ func ConvertCreds(acls [] zk.ACL) []zk.ACL {
 			}
 			digest := base64.StdEncoding.EncodeToString(h.Sum(nil))
 			items := strings.Split(acl.ID, ":")
-			aa = append(aa, zk.ACL{Scheme: "digest", Perms: acl.Perms, ID: fmt.Sprintf("%s:%s", items[0], digest) })
+			aa = append(aa, zk.ACL{Scheme: "digest", Perms: acl.Perms, ID: fmt.Sprintf("%s:%s", items[0], digest)})
 		} else {
 			aa = append(aa, acl)
 		}
@@ -58,11 +58,13 @@ func ConvertCreds(acls [] zk.ACL) []zk.ACL {
 	}
 	return aa
 }
+
 //ZConn -- encapsulate connection adding perms
 type ZConn struct {
 	*zk.Conn
 	Ev <-chan zk.Event
 }
+
 // NewConnection
 func NewConnection(zkServers []string, zkAcls []zk.ACL) (conn *ZConn, err error) {
 	conn = &ZConn{}
@@ -76,6 +78,7 @@ func NewConnection(zkServers []string, zkAcls []zk.ACL) (conn *ZConn, err error)
 	}
 	return conn, nil
 }
+
 // WithTransformedACLs - takes the cli passed acls and digests them for use in setting acls
 func (conn *ZConn) WithTransformedACLs(raw []zk.ACL, ctxt func(acls []zk.ACL) error) error {
 	if ctxt != nil {
@@ -109,7 +112,7 @@ func PersistFrameworkID(fwid *mesos.FrameworkID, zkServers []string, zkChroot st
 			return err
 		}
 		// attempt to write framework ID to <path> / <frameworkName>
-		_, err = c.Create(zkChroot + "/" + frameworkName + "_framework_id",
+		_, err = c.Create(zkChroot+"/"+frameworkName+"_framework_id",
 			[]byte(fwid.GetValue()),
 			0,
 			transformedACLs)
@@ -139,7 +142,7 @@ func UpdateReconciliationInfo(reconciliationInfo map[string]string, zkServers []
 	log.Info("persisting reconciliation info to zookeeper")
 	// Use extra retries here because we really don't want to fall out of
 	// sync here.
-	for retries := 0; retries < RPC_RETRIES * 2; retries++ {
+	for retries := 0; retries < RPC_RETRIES*2; retries++ {
 		outerErr = c.WithTransformedACLs(zkAcls, func(transformedACLs []zk.ACL) (err error) {
 			path := zkChroot + "/" + frameworkName + "_reconciliation"
 
@@ -170,19 +173,19 @@ func UpdateReconciliationInfo(reconciliationInfo map[string]string, zkServers []
 		if outerErr == nil {
 			break
 		}
-		log.Warningf("Failed to configure cluster for new instance: %+v.  " +
-		"Backing off for %d seconds and retrying.", outerErr, backoff)
+		log.Warningf("Failed to configure cluster for new instance: %+v.  "+
+			"Backing off for %d seconds and retrying.", outerErr, backoff)
 		time.Sleep(time.Duration(backoff) * time.Second)
-		backoff = int(math.Min(float64(backoff << 1), 8))
+		backoff = int(math.Min(float64(backoff<<1), 8))
 	}
 
 	return outerErr
 }
 
-func GetPreviousFrameworkID(zkServers []string, zkChroot string, zkAcls []zk.ACL, frameworkName string, ) (fwid string, err error) {
+func GetPreviousFrameworkID(zkServers []string, zkChroot string, zkAcls []zk.ACL, frameworkName string) (fwid string, err error) {
 	c, err := NewConnection(zkServers, zkAcls)
 	if err != nil {
-		return "",err
+		return "", err
 	}
 	defer c.Close()
 
@@ -198,12 +201,12 @@ func GetPreviousFrameworkID(zkServers []string, zkChroot string, zkAcls []zk.ACL
 			return fwid, err
 		}
 		time.Sleep(time.Duration(backoff) * time.Second)
-		backoff = int(math.Min(float64(backoff << 1), 8))
+		backoff = int(math.Min(float64(backoff<<1), 8))
 	}
 	return "", err
 }
 
-func GetPreviousReconciliationInfo(zkServers []string, zkChroot string, zkAcls []zk.ACL, frameworkName string, ) (recon map[string]string, err error) {
+func GetPreviousReconciliationInfo(zkServers []string, zkChroot string, zkAcls []zk.ACL, frameworkName string) (recon map[string]string, err error) {
 	c, err := NewConnection(zkServers, zkAcls)
 	if err != nil {
 		return map[string]string{}, err
@@ -230,7 +233,7 @@ func GetPreviousReconciliationInfo(zkServers []string, zkChroot string, zkAcls [
 				return map[string]string{}, nil
 			}
 			time.Sleep(time.Duration(backoff) * time.Second)
-			backoff = int(math.Min(float64(backoff << 1), 8))
+			backoff = int(math.Min(float64(backoff<<1), 8))
 			continue
 		}
 		return recon, err
@@ -248,8 +251,8 @@ func ClearZKState(zkServers []string, zkChroot string, zkAcls []zk.ACL, framewor
 
 	return c.WithTransformedACLs(zkAcls, func(transformedACLs []zk.ACL) (err error) {
 
-		err1 := c.Delete(zkChroot + "/" + frameworkName + "_framework_id", -1)
-		err2 := c.Delete(zkChroot + "/" + frameworkName + "_reconciliation", -1)
+		err1 := c.Delete(zkChroot+"/"+frameworkName+"_framework_id", -1)
+		err2 := c.Delete(zkChroot+"/"+frameworkName+"_reconciliation", -1)
 		if err1 != nil {
 			return err1
 		} else if err2 != nil {
@@ -281,7 +284,7 @@ func masterInfoFromZKNodes(children []string, ng nodeGetter, codecs map[string]d
 
 	// process children deterministically, preferring json to protobuf
 	sort.Sort(sort.Reverse(sort.StringSlice(children)))
-	childloop:
+childloop:
 	for i := range children {
 		for p := range codecs {
 			if strings.HasPrefix(children[i], p) {
@@ -302,7 +305,7 @@ func masterInfoFromZKNodes(children []string, ng nodeGetter, codecs map[string]d
 
 	sort.Sort(sort.StringSlice(children))
 	var (
-		info mesos.MasterInfo
+		info   mesos.MasterInfo
 		lowest = children[0]
 	)
 	rawData, err := ng(mapped[lowest].node)
@@ -357,10 +360,10 @@ func addressFrom(info *mesos.MasterInfo) string {
 func addressFromRaw(rawData string) (string, error) {
 	// scrape the contents of the raw buffer for anything that looks like a PID
 	var (
-		mraw = strings.Split(string(rawData), "@")[1]
-		mraw2 = strings.Split(mraw, ":")
-		host = mraw2[0]
-		port = 0
+		mraw   = strings.Split(string(rawData), "@")[1]
+		mraw2  = strings.Split(mraw, ":")
+		host   = mraw2[0]
+		port   = 0
 		_, err = fmt.Sscanf(mraw2[1], "%d", &port)
 	)
 	if err != nil {
@@ -369,9 +372,8 @@ func addressFromRaw(rawData string) (string, error) {
 	return net.JoinHostPort(host, strconv.Itoa(port)), nil
 }
 
-
 // need master
-func GetMasterFromZK(zkURI string) (  string, error) {
+func GetMasterFromZK(zkURI string) (string, error) {
 	servers, chroot, acls, err := cli.ParseZKURI(zkURI)
 	if err != nil {
 		return "", nil

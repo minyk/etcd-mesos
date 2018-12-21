@@ -476,98 +476,98 @@
 			"revisionTime": "2016-04-24T11:30:07Z"
 		},
 		{
-			"checksumSHA1": "AwL6gGPNrpKip+E2J1RUtOQRqMc=",
-			"path": "github.com/mesos/mesos-go/auth",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347",
+			"checksumSHA1": "kaoDcAnCetGsIbQVNSWdil20pE8=",
+			"path": "github.com/mesos/mesos-go/api/v0/auth",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323",
 			"revisionTime": "2016-02-29T17:07:32Z"
 		},
 		{
-			"checksumSHA1": "SRAKnmoZq5G+VOxIFx6X9bb/X+c=",
-			"path": "github.com/mesos/mesos-go/auth/callback",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347",
+			"checksumSHA1": "Rv66m6pRC2ZWpaodGhYwEXECZzY=",
+			"path": "github.com/mesos/mesos-go/api/v0/auth/callback",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323",
 			"revisionTime": "2016-02-29T17:07:32Z"
 		},
 		{
-			"checksumSHA1": "XkNblLuItPmCQI8yDDSxr5jhYWQ=",
-			"path": "github.com/mesos/mesos-go/auth/sasl",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347",
+			"checksumSHA1": "82N2YYFd9d1ixElCOqH8A4r28os=",
+			"path": "github.com/mesos/mesos-go/api/v0/auth/sasl",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323",
 			"revisionTime": "2016-02-29T17:07:32Z"
 		},
 		{
-			"checksumSHA1": "Sq60xUn8nsa0nWY1nkkJL6tm6es=",
-			"path": "github.com/mesos/mesos-go/auth/sasl/mech",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347",
+			"checksumSHA1": "TntBavPaoYRLA1rAFnu8tJdapmg=",
+			"path": "github.com/mesos/mesos-go/api/v0/auth/sasl/mech",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323",
 			"revisionTime": "2016-02-29T17:07:32Z"
 		},
 		{
-			"checksumSHA1": "jsHzOFhtTcioCkhtPdD9pIJx1qI=",
-			"path": "github.com/mesos/mesos-go/auth/sasl/mech/crammd5",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347",
+			"checksumSHA1": "xzyWVz2j17fByqbxuUBCAXTCHhc=",
+			"path": "github.com/mesos/mesos-go/api/v0/auth/sasl/mech/crammd5",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323",
 			"revisionTime": "2016-02-29T17:07:32Z"
 		},
 		{
-			"checksumSHA1": "nuYOnPsKSM9nCDPFE6HiDRP15no=",
-			"path": "github.com/mesos/mesos-go/detector",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347",
+			"checksumSHA1": "uOGTApADvq2UBjPAs91HgsxKI9k=",
+			"path": "github.com/mesos/mesos-go/api/v0/detector",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323",
 			"revisionTime": "2016-02-29T17:07:32Z"
 		},
 		{
-			"checksumSHA1": "IwhHLMqiGWxk6IIMHCt31Pe+j0g=",
-			"path": "github.com/mesos/mesos-go/detector/zoo",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347",
+			"checksumSHA1": "SzTWV5vg3qhBdcdVfpngCRWcBM0=",
+			"path": "github.com/mesos/mesos-go/api/v0/detector/zoo",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323",
 			"revisionTime": "2016-02-29T17:07:32Z"
 		},
 		{
-			"checksumSHA1": "M91mraTw/FYxhX47mRhFVaJtDfs=",
-			"path": "github.com/mesos/mesos-go/executor",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347",
+			"checksumSHA1": "MecMYu7+j1UEpaD5ps20OrY6Cqs=",
+			"path": "github.com/mesos/mesos-go/api/v0/executor",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323",
 			"revisionTime": "2016-02-29T17:07:32Z"
 		},
 		{
-			"checksumSHA1": "8vP63QzXtvt6XaQUDYjKuaSgILc=",
-			"path": "github.com/mesos/mesos-go/mesosproto",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347",
+			"checksumSHA1": "S0BGOKRM9TIZZRp/kPjMSVuxNDA=",
+			"path": "github.com/mesos/mesos-go/api/v0/mesosproto",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323",
 			"revisionTime": "2016-02-29T17:07:32Z"
 		},
 		{
-			"checksumSHA1": "gmxrbWwNtGuoDpu1sq01SSdNogM=",
-			"path": "github.com/mesos/mesos-go/mesosproto/scheduler",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347"
+			"checksumSHA1": "1l9+hcmKy0e+udvLXZjtaj7ktnw=",
+			"path": "github.com/mesos/mesos-go/api/v0/mesosproto/scheduler",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323"
 		},
 		{
-			"checksumSHA1": "J3mSbTe5x8YVYg1w+vqxNZ5F4KI=",
-			"path": "github.com/mesos/mesos-go/mesosutil",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347",
+			"checksumSHA1": "SFT2UYKy02yTy4MlNKoD40WBdN0=",
+			"path": "github.com/mesos/mesos-go/api/v0/mesosutil",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323",
 			"revisionTime": "2016-02-29T17:07:32Z"
 		},
 		{
-			"checksumSHA1": "/r7A18vLlTETZZVF7OTMO7eVyBA=",
-			"path": "github.com/mesos/mesos-go/mesosutil/process",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347",
+			"checksumSHA1": "2O5vDlIGLieNaN+tBzkPac97PWA=",
+			"path": "github.com/mesos/mesos-go/api/v0/mesosutil/process",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323",
 			"revisionTime": "2016-02-29T17:07:32Z"
 		},
 		{
-			"checksumSHA1": "ePIrDvcIdB5LawmQeqvfekH6mkI=",
-			"path": "github.com/mesos/mesos-go/messenger",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347",
+			"checksumSHA1": "m0N29hVrK3+wd29phj0CRfYsH0s=",
+			"path": "github.com/mesos/mesos-go/api/v0/messenger",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323",
 			"revisionTime": "2016-02-29T17:07:32Z"
 		},
 		{
-			"checksumSHA1": "sNz0YdXJzU4aKcC5JhcHKlgMX1k=",
-			"path": "github.com/mesos/mesos-go/messenger/sessionid",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347",
+			"checksumSHA1": "+37PFG+tfBGXnpAw3U/11/7b5kw=",
+			"path": "github.com/mesos/mesos-go/api/v0/messenger/sessionid",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323",
 			"revisionTime": "2016-02-29T17:07:32Z"
 		},
 		{
-			"checksumSHA1": "aSM7HSx7PQM4NCzvdnwsxG6E42E=",
-			"path": "github.com/mesos/mesos-go/scheduler",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347",
+			"checksumSHA1": "TDUPCJIuGOBNSDLLjFFrGxF3fZo=",
+			"path": "github.com/mesos/mesos-go/api/v0/scheduler",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323",
 			"revisionTime": "2016-02-29T17:07:32Z"
 		},
 		{
-			"checksumSHA1": "i0pNgzWTPQcO0KLKyQMMza6KXI8=",
-			"path": "github.com/mesos/mesos-go/upid",
-			"revision": "7064d8760d60f029f568b9295e6842612e89e347",
+			"checksumSHA1": "q2Pe+N23u2wNpfO3c3WXInkmPj4=",
+			"path": "github.com/mesos/mesos-go/api/v0/upid",
+			"revision": "62cdc962072279174f51f718be27b7e0615ca323",
 			"revisionTime": "2016-02-29T17:07:32Z"
 		},
 		{
@@ -626,8 +626,7 @@
 		{
 			"checksumSHA1": "F92MtDeWhpZnRFpT+VgaITKTJh4=",
 			"path": "github.com/samuel/go-zookeeper/zk",
-			"revision": "8ac67fae881ed12e87206ba2243c75b079b419a4",
-			"revisionTime": "2017-08-04T17:18:10Z"
+			"revision": "c4fab1ac1bec58281ad0667dc3f0907a9476ac47"
 		},
 		{
 			"checksumSHA1": "EO+jcRet/AJ6IY3lBO8l8BLsZWg=",
