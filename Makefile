@@ -61,8 +61,10 @@ install-tools:
 	@which go-bindata || go get -u github.com/jteeuwen/go-bindata/...
 
 bin/etcd: $(SOURCES) vendor/vendor.json
-	wget "https://github.com/etcd-io/etcd/releases/download/v3.3.10/etcd-v3.3.10-linux-amd64.tar.gz" -P ./bin -O etcd-v3.3.10-linux-amd64.tar.gz
+	curl "https://github.com/etcd-io/etcd/releases/download/v3.3.10/etcd-v3.3.10-linux-amd64.tar.gz" -L -o bin/etcd-v3.3.10-linux-amd64.tar.gz
 	tar zxf ./bin/etcd-v3.3.10-linux-amd64.tar.gz etcd-v3.3.10-linux-amd64/etcd -C ./bin --strip 1
+	tar zxf ./bin/etcd-v3.3.10-linux-amd64.tar.gz etcd-v3.3.10-linux-amd64/etcdctl -C ./bin --strip 1
+	rm -f bin/etcd-v3.3.10-linux-amd64.tar.gz
 
 bin/etcd-mesos-scheduler: $(SOURCES) vendor/vendor.json $(SOURCES)
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64  go build -o bin/etcd-mesos-scheduler cmd/etcd-mesos-scheduler/app.go
